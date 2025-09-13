@@ -1,65 +1,59 @@
 import Stripe from "stripe";
 import Transaction from "../models/Transaction.js";
-import { response } from "express";
+import User from "../models/User.js";
 
-export const stripeWebhook=async(req,res)=>{
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-    const stripe=new Stripe(process.env.STRIPE_SECRET_KEY);
-    const sig=req.headers['stripe-signature'];
+export const stripeWebhook = async (req, res) => {
+  const sig = req.headers["stripe-signature"]; 
+  let event;  
+   console.log("starts---")
+  try {
+    // ✅ Use raw body for webhook verification
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (error) {
+    console.error("❌ Stripe Webhook signature error:", error.message);
+    return res.status(400).send(`Webhook Error: ${error.message}`);
+  }
+   console.log("event--",event)
+  try {
+    switch (event.type) {
+      case "checkout.session.completed": {
+        const session = event.data.object;
+        const { transactionId, appId } = session.metadata || {};
 
-    let event;             
-
-    try{
-event=stripe.webhooks.constructEvent(req.body,sig,process.env.STRIPE_WEBHOOK_SECRET);
-    }catch(error){
-
-
-        return res.status(400).send(`Webhook Error: ${error.message}`);
-    }
-
-
-    try{
-
-        switch(event.type){
-            case "payment_intent.succeeded":{
-                const paymentIntent=event.data.object;
-                const sessionList=await stripe.checkout.sessions.list({
-
-                    payment_intent:paymentIntent.id,
-                })
-
-                const session=sessionList.data[0];
-                const {transactionId,appId}=session.metadata;
-
-                if(appId!=="QuickGPT"){
-const transaction=await Transaction.findOne({_id:transactionId,isPaid:false});
-
-//update credits in user account
-
-
-await User.updateOne({_id:transaction.userId},{$inc:{credits:transaction.credits}})
-
-//update credit payment status
-
-transaction.isPaid=true;
-await transaction.save();
-
-                }else{
-                    return response.json({received:true,message:"Ignored event Invalid app"})
-                }
-                break;
-            }
-
-            default:
-                console.log(`Unhandled event type ${event.type}`);
-
-break;
-
+        if (appId !== "QuickGPT") {
+          console.log("⚠️ Ignored webhook event: Invalid appId", appId);
+          break;
         }
-      res.json({received:true});
 
-    }catch(error){
- console.error("webhook processing error", error)
-        res.status(500).send("Internal Server Error");
+        const transaction = await Transaction.findOne({ _id: transactionId, isPaid: false });
+        if (!transaction) {
+          console.log("⚠️ No unpaid transaction found for:", transactionId);
+          break;
+        }
+
+        // ✅ Update user's credits
+        await User.updateOne(
+          { _id: transaction.userId },
+          { $inc: { credits: transaction.credits } }
+        );
+
+        // ✅ Mark transaction as paid
+        transaction.isPaid = true;
+        await transaction.save();
+
+        console.log(`✅ Credits added: ${transaction.credits} to user ${transaction.userId}`);
+        break;
+      }
+
+      default:
+        console.log(`ℹ️ Unhandled event type: ${event.type}`);
     }
-}
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error("❌ Webhook processing error:", error);
+    res.status(500).send("Internal Server Error");
+  }
+};

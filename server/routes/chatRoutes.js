@@ -1,13 +1,33 @@
-import  express from 'express';
-import { createChat ,deleteChat,getChats} from '../controllers/chatController.js';
+// import  express from 'express';
+// import { createChat ,deleteChat,getChats} from '../controllers/chatController.js';
+// import { protect } from '../middlewares/auth.js';
+
+// const chatRouter=express.Router();
+
+// chatRouter.get('/create',protect, createChat);
+
+// chatRouter.get('/get',protect, getChats);
+// chatRouter.post('/delete',protect, deleteChat);
+
+
+// export default chatRouter;
+
+
+
+
+import express from 'express';
+import { createChat, deleteChat, getChats } from '../controllers/chatController.js';
 import { protect } from '../middlewares/auth.js';
 
-const chatRouter=express.Router();
+const chatRouter = express.Router();
 
-chatRouter.get('/create',protect, createChat);
+// ✅ Make chat creation a POST request
+chatRouter.post('/', protect, createChat);
 
-chatRouter.get('/get',protect, getChats);
-chatRouter.post('/delete',protect, deleteChat);
+// ✅ Get all chats
+chatRouter.get('/get', protect, getChats);
 
+// ✅ Delete chat
+chatRouter.post('/delete', protect, deleteChat);
 
 export default chatRouter;

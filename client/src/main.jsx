@@ -1,21 +1,17 @@
 // main.jsx
 import React from "react";
-import './index.css';
-
 import ReactDOM from "react-dom/client";
-import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
 import "./index.css";
-import {AppContextProvider} from './context/AppContext.jsx'
+import { AppProvider } from "./context/AppContext.jsx"; // <-- use the correct export name
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>
-
-    <AppContextProvider>
- <App />
-    </AppContextProvider>
-     
+      <AppProvider> {/* <-- wrap your app with AppProvider */}
+        <App />
+      </AppProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

@@ -2,7 +2,7 @@
 //API controllers for creating a new chat
 import Chat from '../models/Chat.js';
 export  const createChat=async(req,res)=>{
-
+       console.log("Chat coming...")
     try{
 
         const userId=req.user._id;

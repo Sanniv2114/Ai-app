@@ -1,23 +1,27 @@
 import React, { useState } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Sidebar from "./components/Sidebar";
-import { Route, Routes } from "react-router-dom";
 import ChatBox from "./components/ChatBox";
 import Credits from "./pages/Credits";
 import Community from "./pages/Community";
 import Loading from "./pages/Loading";
-import { assets } from "./assets/assets";
-import "./assets/prism.css";
-import { useAppContext } from "./context/AppContext";
 import Login from "./pages/Login";
-
+import { assets } from "./assets/assets";
+import { useAppContext } from "./context/AppContext";
+import "./assets/prism.css";
 
 const App = () => {
-
-  const {user}=useAppContext();
+  const { user, loadingUser } = useAppContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Show loading screen if the user data is loading
+  if (location.pathname === "/loading" || loadingUser) return <Loading />;
 
   return (
     <>
+      <Toaster />
       {/* Mobile Menu Icon */}
       {!isMenuOpen && (
         <img
@@ -27,31 +31,30 @@ const App = () => {
         />
       )}
 
-{user? (
-      <div className="bg-white text-black dark:bg-gradient-to-b dark:from-[#242124] dark:to-[#000000] dark:text-white">
-        <div className="flex h-screen w-screen">
-          <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
-          <Routes>
-            {/* ✅ Now /loading is handled by React Router */}
-            <Route path="/loading" element={<Loading />} />
-            <Route path="/" element={<ChatBox />} />
-            <Route path="/credits" element={<Credits />} />
-            <Route path="/community" element={<Community />} />
-          </Routes>
+      {user ? (
+        <div className="bg-white text-black dark:bg-gradient-to-b dark:from-[#242124] dark:to-[#000000] dark:text-white">
+          <div className="flex h-screen w-screen">
+            <Sidebar isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
+            <Routes>
+              <Route path="/loading" element={<Loading />} />
+              <Route path="/" element={<ChatBox />} />
+              <Route path="/credits" element={<Credits />} />
+              <Route path="/community" element={<Community />} />
+            </Routes>
+          </div>
         </div>
-      </div>
-):(
-
-  <div className="bg-gradient-to-b from-[#242124] to-[#000000] flex
-  items-center justify-center h-screen w-screen">
-    <Login/>
-  </div>
-)}
-      {/* Main Layout */}
-
+      ) : (
+        <div className="bg-gradient-to-b from-[#242124] to-[#000000] flex items-center justify-center h-screen w-screen">
+          <Login />
+        </div>
+      )}
     </>
   );
 };
 
 export default App;
+
+
+
+
 
